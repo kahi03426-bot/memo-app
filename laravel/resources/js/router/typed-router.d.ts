@@ -30,6 +30,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/Memo-create': RouteRecordInfo<
+      '/Memo-create',
+      '/Memo-create',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -46,6 +53,12 @@ declare module 'vue-router/auto-routes' {
     'resources/js/pages/index.vue': {
       routes:
         | '/'
+      views:
+        | never
+    }
+    'resources/js/pages/Memo-create.vue': {
+      routes:
+        | '/Memo-create'
       views:
         | never
     }

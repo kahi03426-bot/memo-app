@@ -8,17 +8,17 @@ import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
       <DocumentSvg class="icon" />
       <h1 class="title">かんたんメモ</h1>
     </div>
+    <h2 class="subtitle">思いついたことをサッと記録しよう</h2>
   </header>
-  <h2>思いついたことをサッと記録しよう</h2>
 </template>
 
 <style scoped>
 .header {
   display: flex;
   justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 60px;
-  padding: 0 20px;
+  padding-top: 30px;
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
@@ -29,7 +29,7 @@ import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
   gap: 10px;
 }
 
-.icon{
+.icon {
   height: 32px;
   width: auto;
 }
@@ -40,12 +40,11 @@ import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
   color: #ff4500;
 }
 
-h2 {
+.subtitle {
   font-size: 1rem;
   color: #000000;
-  font-weight: 400;
   justify-content: center;
-  display: flex;
-  margin-top: 0.8rem;
+  margin-top: 20px; /* タイトルとの間の距離 */
+  font-weight: normal;
 }
 </style>
