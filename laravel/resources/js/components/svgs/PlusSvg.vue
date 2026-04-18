@@ -9,7 +9,7 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="lucide lucide-plus text-primary-500"
+    class="lucide lucide-plus"
   >
     <path d="M5 12h14"></path>
     <path d="M12 5v14"></path>
