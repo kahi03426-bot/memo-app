@@ -2,15 +2,13 @@
 import { ref } from "vue";
 import PlusSvg from "@/components/svgs/PlusSvg.vue";
 
-// 1. 変数はすべて「関数の外」で定義する
 const title = ref("");
 const content = ref("");
 
-// ここ！これを handleKeyDown の外に出すのが正解です
+// プレースホルダーを外側で定義（これでエラーが消えます）
 const placeholderText = `ここにメモを入力...
 (Enterで保存 / Shift+Enterで改行)`;
 
-// 2. 保存処理
 const handleSave = () => {
   if (!content.value) return;
 
@@ -28,13 +26,11 @@ const handleSave = () => {
   content.value = "";
 };
 
-// 3. キー入力判定
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     handleSave();
   }
-  // この中には placeholderText を書かない
 };
 </script>
 
@@ -67,7 +63,6 @@ const handleKeyDown = (e: KeyboardEvent) => {
 </template>
 
 <style scoped>
-/* スタイル部分は前回から変更なし */
 .page-wrapper {
   background: #ffddce;
   min-height: 100vh;
@@ -113,18 +108,31 @@ const handleKeyDown = (e: KeyboardEvent) => {
   width: 100%;
   min-height: 250px;
   padding: 15px;
-  border: 2px solid #eeeeee;
+  border: 2px solid #eeeeee; /* 通常時の枠線 */
   border-radius: 8px;
   outline: none;
   font-family: inherit;
   font-size: 1rem;
   line-height: 1.6;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease; /* 変化をふわっとさせる */
   resize: vertical;
 }
 
+/* ★ 1. クリックした時（フォーカス時）の枠色 */
+.memo-textarea:focus {
+  border-color: #ff884d; /* オレンジ色に変わる */
+  background-color: #fffcfb; /* ほんの少しだけ背景を明るくする（お好みで） */
+  box-shadow: 0 0 0 4px rgba(255, 136, 77, 0.1); /* ふわっとした光彩を追加 */
+}
+
+/* ★ 2. 文字が入っている時の枠色（フォーカスが外れてもオレンジを維持したい場合） */
 .memo-textarea.has-content {
   border-color: #ffaa80;
+}
+
+.memo-textarea::placeholder {
+  white-space: pre-line;
+  color: #bbb;
 }
 
 .memo-footer {
