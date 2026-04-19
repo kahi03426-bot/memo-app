@@ -5,25 +5,46 @@ import PlusSvg from "@/components/svgs/PlusSvg.vue";
 const title = ref("");
 const content = ref("");
 
-// プレースホルダーを外側で定義（これでエラーが消えます）
 const placeholderText = `ここにメモを入力...
 (Enterで保存 / Shift+Enterで改行)`;
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!content.value) return;
 
   const newMemo = {
-    id: Date.now(),
     title: title.value || "無題のメモ",
     content: content.value,
-    date: new Date().toLocaleString(),
   };
 
-  console.log("保存されたメモ:", newMemo);
-  alert("メモを保存しました！");
+  try {
+    // 2. サーバー（Laravel）の API へデータを送信
+    const response = await fetch("http://localhost:48080/api/memos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(newMemo), // データをテキスト形式に変換
+    });
 
-  title.value = "";
-  content.value = "";
+    // 3. サーバーからの返事が OK かチェック
+    if (!response.ok) {
+      throw new Error("サーバーでの保存に失敗しました");
+    }
+
+    const result = await response.json();
+    console.log("DBに保存されたデータ:", result);
+    alert("データベースに保存しました！");
+
+    title.value = "";
+    content.value = "";
+  }
+
+  catch (error) {
+    // 5. 通信エラーなどが起きた場合の処理
+    console.error("保存中にエラー:", error);
+    alert("保存できませんでした。サーバーが動いているか確認してください。");
+  }
 };
 
 const handleKeyDown = (e: KeyboardEvent) => {
