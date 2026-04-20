@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('memos', function (Blueprint $table) {
             $table->id();
-            $table->string('title');   // メモのタイトル（短い文）
+            $table->string('title')->nullable();
             $table->text('content');
             $table->timestamps();
         });
