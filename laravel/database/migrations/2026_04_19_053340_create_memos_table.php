@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('memos', function (Blueprint $table) {
             $table->id();
-            $table->string('title')->nullable();
-            $table->text('content');
+            $table->string('title');
+            $table->text('content')->nullable();
             $table->timestamps();
+            $table->datetime('due')->nullable();
         });
     }
 

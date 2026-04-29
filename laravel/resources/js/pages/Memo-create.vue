@@ -12,6 +12,7 @@ interface Memo {
 const title = ref("");
 const content = ref("");
 const memos = ref<Memo[]>([]);
+const due = ref("");
 
 const fetchMemos = async () => {
   try {
@@ -25,18 +26,19 @@ const fetchMemos = async () => {
 
 const emit = defineEmits(["saved"]);
 const handleSave = async () => {
-  if (!content.value) return;
+  if (!title.value && !content.value) return;
   try {
     const response = await fetch("http://localhost:48080/api/memos", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ title: "無題のメモ", content: content.value }),
+      body: JSON.stringify({ title: title.value, content: content.value, due: due.value }),
     });
     if (!response.ok) throw new Error("保存失敗");
 
+    title.value = "";
     content.value = "";
+    due.value = "";
 
-    // 3. 自分でfetchせず、親に「保存したよ」と伝える
     emit("saved");
   } catch (error) {
     alert("保存に失敗しました");
@@ -46,13 +48,13 @@ const handleSave = async () => {
 onMounted(() => fetchMemos());
 
 const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.key === "Enter" && !e.shiftKey) {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
     handleSave();
   }
 };
 
-const placeholderText = `ここにメモを入力...
+const placeholderText = `ここに詳細を入力...
 (Enterで保存 / Shift+Enterで改行)`;
 </script>
 
@@ -62,15 +64,31 @@ const placeholderText = `ここにメモを入力...
       <PlusSvg class="plus-icon-header" />
       <h1 class="title">新しいメモ</h1>
     </div>
+
+    <textarea
+      v-model="title"
+      placeholder="TODO"
+      class="memo-title-textarea"
+      @keydown="handleKeyDown"
+      :class="{ has_title: title }"
+    ></textarea>
+
     <textarea
       v-model="content"
       :placeholder="placeholderText"
       class="memo-textarea"
+      :class="{ has_content: content }"
       @keydown="handleKeyDown"
     ></textarea>
+    <input
+      type="datetime-local"
+      v-model="due"
+      class="date-input"
+      :class="{ is_empty: !due, due: due }"
+    />
     <div class="memo-footer">
       <span class="char-count">{{ content.length }} 文字</span>
-      <button @click="handleSave" :disabled="!content" class="save-button">
+      <button @click="handleSave" :disabled="!title" class="save-button">
         <PlusSvg class="plus-icon-button" />
         <span>保存する</span>
       </button>
@@ -111,7 +129,29 @@ const placeholderText = `ここにメモを入力...
   color: #333;
   font-weight: bold;
 }
+.memo-title-textarea {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  border: 2px solid #eeeeee;
+  border-radius: 8px;
+  outline: none;
+  font-size: 1rem;
+  line-height: 1.6;
+  transition: all 0.3s ease;
+  resize: vertical;
+  height: 50px;
+}
 
+.memo-title-textarea:focus {
+  border-color: #ff884d;
+  background-color: #fffcfb;
+  box-shadow: 0 0 0 4px rgba(255, 136, 77, 0.1);
+}
+
+.memo-title-textarea.has_title {
+  border-color: #ffaa80;
+}
 .memo-textarea {
   width: 100%;
   min-height: 100px;
@@ -132,7 +172,7 @@ const placeholderText = `ここにメモを入力...
   box-shadow: 0 0 0 4px rgba(255, 136, 77, 0.1);
 }
 
-.memo-textarea.has-content {
+.memo-textarea.has_content {
   border-color: #ffaa80;
 }
 
@@ -148,8 +188,31 @@ const placeholderText = `ここにメモを入力...
   margin-top: 15px;
 }
 
+.date-input {
+  border: 2px solid #eeeeee;
+  border-radius: 8px;
+  margin-top: 15px;
+  padding: 10px;
+  outline: none;
+  height: 50px;
+}
+
+.date-input:focus {
+  border-color: #ff884d;
+  background-color: #fffcfb;
+  box-shadow: 0 0 0 4px rgba(255, 136, 77, 0.1);
+}
+
+.date-input.is_empty {
+  color: #999;
+}
+.date-input.due {
+  border-color: #ffaa80;
+}
+
 .char-count {
   font-size: 0.85rem;
+  margin-left: 15px;
   color: #888;
 }
 
@@ -189,11 +252,6 @@ const placeholderText = `ここにメモを入力...
   cursor: not-allowed;
 }
 
-.memo-item:hover .delete-button {
-  opacity: 1;
-}
-
-/* 他、既存のボタンスタイルなどはそのまま適用 */
 .save-button {
   background-color: #ff884d;
   color: white;

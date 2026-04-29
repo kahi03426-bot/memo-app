@@ -1,51 +1,55 @@
 <script setup lang="ts">
 import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
 import TrashSvg from "@/components/svgs/TrashSvg.vue";
-import { ref } from "vue"; // onMountedは不要になるので削除
+import { ref } from "vue";
 
 interface Memo {
   id: number;
   title: string;
   content: string;
   created_at: string;
+  due: string;
 }
 
-// --- 1. 親からデータをもらう設定 (重複していたので一つに) ---
 defineProps<{
   memos: Memo[];
 }>();
 
-// --- 2. 親に「更新して！」と伝える設定 ---
 const emit = defineEmits(["refresh"]);
 
-// --- 編集用の状態 ---
 const editingId = ref<number | null>(null);
+const editTitle = ref("");
 const editContent = ref("");
+const editDue = ref("");
 
 const startEdit = (memo: Memo) => {
   editingId.value = memo.id;
+  editTitle.value = memo.title;
   editContent.value = memo.content;
+  editDue.value = memo.due || "";
 };
 
 const cancelEdit = () => {
   editingId.value = null;
+  editTitle.value = "";
   editContent.value = "";
 };
 
-// --- API操作 (自分自身の fetchMemos は削除) ---
-
 const handleUpdate = async (id: number) => {
-  if (!editContent.value) return;
+  if (!editTitle.value && !editContent.value) return;
   try {
     const response = await fetch(`http://localhost:48080/api/memos/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ content: editContent.value }),
+      body: JSON.stringify({
+        title: editTitle.value,
+        content: editContent.value,
+        due: editDue.value,
+      }),
     });
     if (!response.ok) throw new Error("更新失敗");
 
     editingId.value = null;
-    // ★重要: 自分のfetchではなく、親に再取得をお願いする
     emit("refresh");
   } catch (error) {
     alert("更新に失敗しました");
@@ -60,7 +64,6 @@ const handleDelete = async (id: number) => {
     });
     if (!response.ok) throw new Error("削除失敗");
 
-    // ★重要: 親に再取得をお願いする
     emit("refresh");
   } catch (error) {
     alert("削除できませんでした");
@@ -70,7 +73,7 @@ const handleDelete = async (id: number) => {
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleString("ja-JP", {
-    year: "numeric",
+    year: "2-digit",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -90,7 +93,9 @@ const formatDate = (dateString: string) => {
 
   <div v-for="memo in memos" :key="memo.id" class="memo-item">
     <div v-if="editingId === memo.id" class="edit-layout">
+      <input v-model="editTitle" class="inline-textarea" />
       <textarea v-model="editContent" class="inline-textarea"></textarea>
+      <input type="datetime-local" v-model="editDue" class="edit-date-input" />
       <div class="edit-actions">
         <button @click="handleUpdate(memo.id)" class="update-btn">更新</button>
         <button @click="cancelEdit" class="cancel-btn">キャンセル</button>
@@ -101,14 +106,14 @@ const formatDate = (dateString: string) => {
       <button class="delete-button" @click.stop="handleDelete(memo.id)">
         <TrashSvg class="icon" />
       </button>
-      <p class="memo-text">{{ memo.content }}</p>
-      <small class="memo-date">{{ formatDate(memo.created_at) }}</small>
+      <p class="memo-title">{{ memo.title }}</p>
+      <p class="memo-content">{{ memo.content }}</p>
+      <p class="due-date">Due : {{ formatDate(memo.due) }}</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* スタイルは今のままでOKです！ */
 .icon {
   width: 24px;
   height: 24px;
@@ -146,6 +151,7 @@ const formatDate = (dateString: string) => {
   max-width: 600px;
   width: 90%;
 }
+
 .memo-item:hover {
   border-color: #ff884d;
   background-color: #fffcfb;
@@ -155,15 +161,42 @@ const formatDate = (dateString: string) => {
 }
 .inline-textarea {
   width: 100%;
-  min-height: 100px;
+  min-height: 50px;
   border: 2px solid #ff884d;
   border-radius: 8px;
-  padding: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
   font-family: inherit;
   font-size: 1rem;
   resize: vertical;
   outline: none;
 }
+.memo-title {
+  font-size: 1.15rem;
+  font-weight: bold;
+}
+
+.memo-content {
+  font-size: 1rem;
+  margin: 0 0 5px 5px;
+}
+
+.due-date {
+  font-size: 1rem;
+  margin: 0;
+}
+.memo-date {
+  text-align: right;
+  display: block;
+}
+.edit-date-input {
+  border: 2px solid #ff884d;
+  border-radius: 8px;
+  padding: 15px;
+  outline: none;
+  height: 50px;
+}
+
 .edit-actions {
   display: flex;
   justify-content: flex-end;
