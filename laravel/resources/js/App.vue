@@ -21,7 +21,6 @@ onMounted(fetchMemos);
     <memo-save :memos="memos" @refresh="fetchMemos" />
   </div>
 
-  <!--  <router-view /> -->
 </template>
 
 <style scoped>

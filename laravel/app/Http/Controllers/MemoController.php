@@ -9,8 +9,9 @@ class MemoController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'nullable',
-            'content' => 'required',
+            'title' => 'required',
+            'content' => 'nullable',
+            'due' => 'nullable',
         ]);
 
         $memo = Memo::create($validated);
@@ -18,10 +19,7 @@ class MemoController extends Controller
     }
     public function index()
     {
-        // データベースからすべてのメモを、新着順（作成日の降順）で取得
-        $memos = Memo::orderBy('created_at', 'desc')->get();
-
-        // JSON形式でVueに返す
+        $memos = Memo::orderBy('due', 'asc')->get();
         return response()->json($memos);
     }
     public function destroy(Memo $memo)
@@ -31,7 +29,7 @@ class MemoController extends Controller
     }
     public function update(Request $request, Memo $memo)
     {
-        $memo->update($request->only(['title', 'content']));
+        $memo->update($request->only(['title', 'content', 'due']));
         return response()->json($memo);
     }
 }
