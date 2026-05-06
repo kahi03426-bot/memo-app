@@ -20,7 +20,6 @@ onMounted(fetchMemos);
     <memo-create @saved="fetchMemos" />
     <memo-save :memos="memos" @refresh="fetchMemos" />
   </div>
-
 </template>
 
 <style scoped>
@@ -29,5 +28,7 @@ onMounted(fetchMemos);
   min-height: 100vh;
   width: 100%;
   padding: 40px;
+  padding-top:150px;
 }
+
 </style>
