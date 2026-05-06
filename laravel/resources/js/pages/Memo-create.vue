@@ -1,52 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import PlusSvg from "@/components/svgs/PlusSvg.vue";
+import { useMemoStore } from "@/memoStore.ts";
 
-interface Memo {
-  id: number;
-  title: string;
-  content: string;
-  created_at: string;
-}
 
+const memoStore = useMemoStore();
 const title = ref("");
 const content = ref("");
-const memos = ref<Memo[]>([]);
 const due = ref("");
 
-const fetchMemos = async () => {
-  try {
-    const response = await fetch("http://localhost:48080/api/memos");
-    if (!response.ok) throw new Error("取得失敗");
-    memos.value = await response.json();
-  } catch (error) {
-    console.error("一覧取得エラー:", error);
-  }
-};
-
-const emit = defineEmits(["saved"]);
 const handleSave = async () => {
   if (!title.value && !content.value) return;
   try {
-    const response = await fetch("http://localhost:48080/api/memos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ title: title.value, content: content.value, due: due.value }),
-    });
-    if (!response.ok) throw new Error("保存失敗");
-
+    await memoStore.saveMemo(title.value, content.value, due.value);
     title.value = "";
     content.value = "";
     due.value = "";
-
-    emit("saved");
   } catch (error) {
     alert("保存に失敗しました");
   }
 };
-
-onMounted(() => fetchMemos());
-
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
     e.preventDefault();

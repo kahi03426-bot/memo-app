@@ -2,23 +2,21 @@
 import Header from "@/components/Header.vue";
 import MemoCreate from "@/pages/Memo-create.vue";
 import memoSave from "@/pages/memo-save.vue";
-import { ref, onMounted } from "vue";
+import { onMounted } from "vue";
+import { useMemoStore } from "@/memoStore.ts";
 
-const memos = ref([]);
+const memoStore = useMemoStore();
 
-const fetchMemos = async () => {
-  const response = await fetch("http://localhost:48080/api/memos");
-  memos.value = await response.json();
-};
-
-onMounted(fetchMemos);
+onMounted(() => {
+  memoStore.fetchMemos();
+});
 </script>
 
 <template>
   <Header />
   <div class="page-wrapper">
-    <memo-create @saved="fetchMemos" />
-    <memo-save :memos="memos" @refresh="fetchMemos" />
+    <memo-create />
+    <memo-save />
   </div>
 </template>
 
@@ -27,8 +25,6 @@ onMounted(fetchMemos);
   background: #ffefe8;
   min-height: 100vh;
   width: 100%;
-  padding: 40px;
-  padding-top:150px;
+  padding: 150px 40px 40px 40px;
 }
-
 </style>

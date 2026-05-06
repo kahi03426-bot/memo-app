@@ -1,22 +1,10 @@
 <script setup lang="ts">
 import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
 import TrashSvg from "@/components/svgs/TrashSvg.vue";
+import { useMemoStore, type Memo } from "@/memoStore.ts";
 import { ref } from "vue";
 
-interface Memo {
-  id: number;
-  title: string;
-  content: string;
-  created_at: string;
-  due: string;
-}
-
-defineProps<{
-  memos: Memo[];
-}>();
-
-const emit = defineEmits(["refresh"]);
-
+const memoStore = useMemoStore();
 const editingId = ref<number | null>(null);
 const editTitle = ref("");
 const editContent = ref("");
@@ -33,24 +21,14 @@ const cancelEdit = () => {
   editingId.value = null;
   editTitle.value = "";
   editContent.value = "";
+  editDue.value = ""; // これを追加！
 };
 
 const handleUpdate = async (id: number) => {
   if (!editTitle.value && !editContent.value) return;
   try {
-    const response = await fetch(`http://localhost:48080/api/memos/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        title: editTitle.value,
-        content: editContent.value,
-        due: editDue.value,
-      }),
-    });
-    if (!response.ok) throw new Error("更新失敗");
-
+    await memoStore.updateMemo(id, editTitle.value, editContent.value, editDue.value);
     editingId.value = null;
-    emit("refresh");
   } catch (error) {
     alert("更新に失敗しました");
   }
@@ -59,12 +37,7 @@ const handleUpdate = async (id: number) => {
 const handleDelete = async (id: number) => {
   if (!confirm("削除してもよろしいですか？")) return;
   try {
-    const response = await fetch(`http://localhost:48080/api/memos/${id}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) throw new Error("削除失敗");
-
-    emit("refresh");
+    await memoStore.deleteMemo(id);
   } catch (error) {
     alert("削除できませんでした");
   }
@@ -88,17 +61,19 @@ const formatDate = (dateString: string) => {
       <DocumentSvg class="icon" />
       <h1 class="saved-memo">保存されたメモ</h1>
     </div>
-    <div class="memo-number">{{ memos.length }}件</div>
+    <div class="memo-number">{{ memoStore.memos.length }}件</div>
   </div>
 
-  <div v-for="memo in memos" :key="memo.id" class="memo-item">
+  <div v-for="memo in memoStore.memos" :key="memo.id" class="memo-item">
     <div v-if="editingId === memo.id" class="edit-layout">
-      <input v-model="editTitle" class="inline-textarea" />
-      <textarea v-model="editContent" class="inline-textarea"></textarea>
-      <input type="datetime-local" v-model="editDue" class="edit-date-input" />
-      <div class="edit-actions">
-        <button @click="handleUpdate(memo.id)" class="update-btn">更新</button>
-        <button @click="cancelEdit" class="cancel-btn">キャンセル</button>
+      <input v-model="editTitle" class="inline-textarea" placeholder="タイトル" />
+      <textarea v-model="editContent" class="inline-textarea" placeholder="内容"></textarea>
+      <div class="edit-footer">
+        <input type="datetime-local" v-model="editDue" class="edit-date-input" />
+        <div class="edit-actions">
+          <button @click="handleUpdate(memo.id)" class="update-btn">更新</button>
+          <button @click="cancelEdit" class="cancel-btn">キャンセル</button>
+        </div>
       </div>
     </div>
 
@@ -118,18 +93,7 @@ const formatDate = (dateString: string) => {
   width: 24px;
   height: 24px;
 }
-.saved-memo {
-  font-size: 1.25rem;
-  margin: 0;
-  color: #333;
-  font-weight: bold;
-}
-.saved-memo-box {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
-}
+
 .saved-memo-header {
   display: flex;
   justify-content: space-between;
@@ -139,6 +103,29 @@ const formatDate = (dateString: string) => {
   max-width: 600px;
   margin: 0 auto;
 }
+
+.saved-memo-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.saved-memo {
+  font-size: 1.25rem;
+  margin: 0;
+  color: #333;
+  font-weight: bold;
+}
+
+.memo-number {
+  background: #ffd9c2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  color: #ff6a20;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
 .memo-item {
   background: #ffffff;
   border: 1px solid #e0e0e0;
@@ -146,80 +133,121 @@ const formatDate = (dateString: string) => {
   padding: 20px;
   margin: 20px auto;
   position: relative;
-  transition: all 0.3s ease;
-  cursor: pointer;
   max-width: 600px;
   width: 90%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .memo-item:hover {
   border-color: #ff884d;
   background-color: #fffcfb;
 }
-.memo-item:hover .delete-button {
-  opacity: 1;
+
+.display-layout {
+  display: flex;
+  flex-direction: column;
 }
-.inline-textarea {
-  width: 100%;
-  min-height: 50px;
-  border: 2px solid #ff884d;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 10px;
-  font-family: inherit;
-  font-size: 1rem;
-  resize: vertical;
-  outline: none;
-}
+
 .memo-title {
   font-size: 1.15rem;
   font-weight: bold;
+  margin: 0 0 4px 0;
+  color: #333;
 }
 
 .memo-content {
   font-size: 1rem;
-  margin: 0 0 5px 5px;
+  margin: 0 0 8px 0;
+  color: #555;
+  line-height: 1.3;
+  white-space: pre-wrap;
 }
 
 .due-date {
+  font-size: 0.85rem;
+  color: #888;
+  margin:0;
+}
+
+.edit-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.inline-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid #ff884d;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: inherit;
   font-size: 1rem;
-  margin: 0;
+  outline: none;
+  background: #fff;
 }
-.memo-date {
-  text-align: right;
-  display: block;
+
+
+textarea.inline-textarea {
+  min-height: 100px;
+  resize: vertical;
 }
+
+.edit-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .edit-date-input {
   border: 2px solid #ff884d;
   border-radius: 8px;
-  padding: 15px;
+  padding: 8px 12px;
   outline: none;
-  height: 50px;
+  font-family: inherit;
+  color: #555;
 }
 
 .edit-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 10px;
-  margin-top: 10px;
 }
+
 .update-btn {
   background: #ff884d;
   color: white;
   border: none;
-  padding: 6px 16px;
+  padding: 8px 20px;
   border-radius: 20px;
   cursor: pointer;
   font-weight: bold;
+  transition: background 0.2s;
 }
+
+.update-btn:hover {
+  background: #e6763d;
+}
+
 .cancel-btn {
   background: #eee;
   color: #666;
   border: none;
-  padding: 6px 16px;
+  padding: 8px 20px;
   border-radius: 20px;
   cursor: pointer;
+  transition: background 0.2s;
 }
+
+.cancel-btn:hover {
+  background: #ddd;
+}
+
+
 .delete-button {
   position: absolute;
   top: 15px;
@@ -234,15 +262,25 @@ const formatDate = (dateString: string) => {
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
   z-index: 10;
   cursor: pointer;
 }
-.memo-number {
-  background: #ffd9c2;
-  padding: 4px 12px;
-  border-radius: 20px;
-  color: #ff6a20;
-  font-weight: bold;
+
+.delete-button:hover {
+  transform: scale(1.1);
+  background: #ff3333;
+}
+
+.memo-item:hover .delete-button {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .delete-button {
+    opacity: 1;
+  }
 }
 </style>
