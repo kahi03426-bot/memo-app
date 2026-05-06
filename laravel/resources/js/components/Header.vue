@@ -15,12 +15,15 @@ import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
 <style scoped>
 .header {
   display: flex;
+  z-index:1000;
+  position: fixed;
   justify-content: center;
   flex-direction: column;
   align-items: center;
   padding-top: 30px;
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
 }
 
 .header-center {
@@ -42,9 +45,8 @@ import DocumentSvg from "@/components/svgs/DocumentSvg.vue";
 
 .subtitle {
   font-size: 1rem;
-  color: #000000;
+  color: #888888;
   justify-content: center;
-  margin-top: 20px; /* タイトルとの間の距離 */
-  font-weight: normal;
+  margin: 15px 0 10px 0;
 }
 </style>
